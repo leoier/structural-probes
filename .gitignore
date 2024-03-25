@@ -1,0 +1,30 @@
+# MacOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+*.egg-info
+*.pyc
+*.pyo
+*.pyd
+*.pyc
+*.pyo
+
+# data files
+data
+text_data.txt
+
+# results
+results
+
+# corenlp
+stanford-corenlp-4.5.6
