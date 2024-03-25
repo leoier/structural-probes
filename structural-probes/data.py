@@ -409,6 +409,92 @@ class BERTDataset(SubwordDataset):
     return observations
 
 
+class GPTDataset(SubwordDataset):
+  """Dataloader for conllx files and pre-computed BERT embeddings.
+
+  See SimpleDataset.
+  Attributes:
+    args: the global yaml-derived experiment config dictionary
+  """
+
+  def convert_offsets_to_mapping(self, offsets, words):
+    # convert the character offsets to word offsets
+    char_to_word = []
+    word_idx = 0
+    sentence = ' '.join(words)
+    for char_idx, c in enumerate(sentence):
+      if c == ' ':
+        word_idx += 1
+      char_to_word.append(word_idx)
+    # convert token idx to word idx 
+    untok_to_tok_mapping = [[] for _ in range(len(words))]
+    for i, (start, end) in enumerate(offsets):
+      untok_to_tok_mapping[char_to_word[start]].append(i)
+    return untok_to_tok_mapping
+
+  def generate_subword_embeddings_from_hdf5(self, observations, filepath, elmo_layer, subword_tokenizer=None):
+    '''Reads pre-computed subword embeddings from hdf5-formatted file.
+
+    Sentences should be given integer keys corresponding to their order
+    in the original file.
+    Embeddings should be of the form (layer_count, subword_sent_length, feature_count)
+    subword_sent_length is the length of the sequence of subword tokens
+    when the subword tokenizer was given each canonical token (as given
+    by the conllx file) independently and tokenized each. Thus, there
+    is a single alignment between the subword-tokenized sentence
+    and the conllx tokens.
+
+    Args:
+      args: the global yaml-derived experiment config dictionary.
+      observations: A list of Observations composing a dataset.
+      filepath: The filepath of a hdf5 file containing embeddings.
+      layer_index: The index corresponding to the layer of representation
+          to be used. (e.g., 0, 1, 2 for BERT0, BERT1, BERT2.)
+      subword_tokenizer: (optional) a tokenizer used to map from
+          conllx tokens to subword tokens.
+    
+    Returns:
+      A list of numpy matrices; one for each observation.
+
+    Raises:
+      AssertionError: sent_length of embedding was not the length of the
+        corresponding sentence in the dataset.
+      Exit: importing pytorch_pretrained_bert has failed, possibly due 
+          to downloading of prespecifed tokenizer problem. Not recoverable;
+          exits immediately.
+    '''
+    if subword_tokenizer == None:
+      from transformers import GPT2TokenizerFast
+      model_size = 'gpt2'  
+      subword_tokenizer = GPT2TokenizerFast.from_pretrained(model_size)
+      print(f'Using {model_size} tokenizer to align embeddings with PTB tokens')
+    
+    hf = h5py.File(filepath, 'r')
+    indices = list(hf.keys())
+    single_layer_features_list = []
+    for index in tqdm(sorted([int(x) for x in indices]), desc='[aligning embeddings]'):
+      observation = observations[index]
+      feature_stack = hf[str(index)]
+      single_layer_features = feature_stack[elmo_layer]
+      tokenized_sent = subword_tokenizer.tokenize(' '.join(observation.sentence))
+      untokenized_sent = observation.sentence
+      enc = subword_tokenizer(' '.join(observation.sentence), return_tensors='pt', return_offsets_mapping=True)
+      untok_tok_mapping = self.convert_offsets_to_mapping(enc['offset_mapping'][0], observation.sentence)
+      assert single_layer_features.shape[0] == len(tokenized_sent)
+      single_layer_features = torch.tensor([np.mean(single_layer_features[untok_tok_mapping[i][0]:untok_tok_mapping[i][-1]+1,:], axis=0) for i in range(len(untokenized_sent))])
+      assert single_layer_features.shape[0] == len(observation.sentence)
+      single_layer_features_list.append(single_layer_features)
+    return single_layer_features_list
+
+  def optionally_add_embeddings(self, observations, pretrained_embeddings_path):
+    """Adds pre-computed BERT embeddings from disk to Observations."""
+    layer_index = self.args['model']['model_layer']
+    print(f'Loading GPT-2 Pretrained Embeddings from {pretrained_embeddings_path}; using layer {layer_index}')    
+    embeddings = self.generate_subword_embeddings_from_hdf5(observations, pretrained_embeddings_path, layer_index)
+    observations = self.add_embeddings_to_observations(observations, embeddings)
+    return observations
+
+
 class ObservationIterator(Dataset):
   """ List Container for lists of Observations and labels for them.
 

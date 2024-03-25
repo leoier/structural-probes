@@ -57,6 +57,8 @@ def choose_dataset_class(args):
     dataset_class = data.ELMoDataset
   elif args['model']['model_type'] == 'BERT-disk':
     dataset_class = data.BERTDataset
+  elif args['model']['model_type'] == 'gpt-2':
+    dataset_class = data.GPTDataset
   else:
     raise ValueError("Unknown model type for datasets: {}".format(
       args['model']['model_type']))
@@ -101,6 +103,8 @@ def choose_model_class(args):
     return model.ProjectionModel
   elif args['model']['model_type'] == 'ELMo-decay':
     return model.DecayModel
+  elif args['model']['model_type'] == 'gpt-2':
+    return model.DiskModel
   elif args['model']['model_type'] == 'pytorch_model':
     raise ValueError("Using pytorch models for embeddings not yet supported...")
   else:
@@ -237,6 +241,6 @@ if __name__ == '__main__':
 
   yaml_args= yaml.load(open(cli_args.experiment_config))
   setup_new_experiment_dir(cli_args, yaml_args, cli_args.results_dir)
-  device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
   yaml_args['device'] = device
   execute_experiment(yaml_args, train_probe=cli_args.train_probe, report_results=cli_args.report_results)
