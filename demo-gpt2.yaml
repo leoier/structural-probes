@@ -1,0 +1,13 @@
+model:
+  hidden_dim: 768 # hidden dim
+  model_type: gpt-2 # BERT-disk, ELMo-disk, 
+  use_disk: False
+  model_layer: 7 # BERT-base: {1,...,12}; ELMo: {1,2,3}
+probe:
+  task_name: demo
+  maximum_rank: 768
+  psd_parameters: True
+  depth_params_path: data/gpt7-depth-probe.params
+  distance_params_path: data/gpt7-distance-probe.params
+reporting:
+  root: results/gpt2
