@@ -416,8 +416,8 @@ class GPTDataset(SubwordDataset):
   Attributes:
     args: the global yaml-derived experiment config dictionary
   """
-
-  def convert_offsets_to_mapping(self, offsets, words):
+  @staticmethod
+  def convert_offsets_to_mapping(offsets, words):
     # convert the character offsets to word offsets
     char_to_word = []
     word_idx = 0
