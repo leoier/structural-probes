@@ -6,6 +6,8 @@ import torch
 class Probe(nn.Module):
   pass
 
+init_range = 0.00005
+
 class TwoWordPSDProbe(Probe):
   """ Computes squared L2 distance after projection by a matrix.
 
@@ -19,7 +21,7 @@ class TwoWordPSDProbe(Probe):
     self.probe_rank = args['probe']['maximum_rank']
     self.model_dim = args['model']['hidden_dim']
     self.proj = nn.Parameter(data = torch.zeros(self.model_dim, self.probe_rank))
-    nn.init.uniform_(self.proj, -0.05, 0.05)
+    nn.init.uniform_(self.proj, -init_range, init_range)
     self.to(args['device'])
 
   def forward(self, batch):
@@ -57,7 +59,7 @@ class OneWordPSDProbe(Probe):
     self.probe_rank = args['probe']['maximum_rank']
     self.model_dim = args['model']['hidden_dim']
     self.proj = nn.Parameter(data = torch.zeros(self.model_dim, self.probe_rank))
-    nn.init.uniform_(self.proj, -0.05, 0.05)
+    nn.init.uniform_(self.proj, -init_range, init_range)
     self.to(args['device'])
 
   def forward(self, batch):
@@ -93,7 +95,7 @@ class OneWordNonPSDProbe(Probe):
     self.args = args
     self.model_dim = args['model']['hidden_dim']
     self.proj = nn.Parameter(data = torch.zeros(self.model_dim, self.model_dim))
-    nn.init.uniform_(self.proj, -0.05, 0.05)
+    nn.init.uniform_(self.proj, -init_range, init_range)
     self.to(args['device'])
 
   def forward(self, batch):
@@ -128,7 +130,7 @@ class TwoWordNonPSDProbe(Probe):
     self.probe_rank = args['probe']['maximum_rank']
     self.model_dim = args['model']['hidden_dim']
     self.proj = nn.Parameter(data = torch.zeros(self.model_dim, self.model_dim))
-    nn.init.uniform_(self.proj, -0.05, 0.05)
+    nn.init.uniform_(self.proj, -init_range, init_range)
     self.to(args['device'])
 
   def forward(self, batch):
