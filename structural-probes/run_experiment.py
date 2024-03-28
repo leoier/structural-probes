@@ -59,6 +59,8 @@ def choose_dataset_class(args):
     dataset_class = data.BERTDataset
   elif args['model']['model_type'] == 'gpt-2':
     dataset_class = data.GPTDataset
+  elif args['model']['model_type'].startswith('roberta'):
+    dataset_class = data.RobertaDataset
   else:
     raise ValueError("Unknown model type for datasets: {}".format(
       args['model']['model_type']))
@@ -104,6 +106,8 @@ def choose_model_class(args):
   elif args['model']['model_type'] == 'ELMo-decay':
     return model.DecayModel
   elif args['model']['model_type'] == 'gpt-2':
+    return model.DiskModel
+  elif args['model']['model_type'].startswith('roberta'):
     return model.DiskModel
   elif args['model']['model_type'] == 'pytorch_model':
     raise ValueError("Using pytorch models for embeddings not yet supported...")
